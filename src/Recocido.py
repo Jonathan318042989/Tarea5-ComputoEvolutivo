@@ -3,10 +3,10 @@ import numpy as np
 from Funciones import *
 from Codificacion import *
 import sys
+
 class Recocido:
     
     def __init__(self):
-        self.velocidad_enfriamiento = 10
         self.funciones = {"sphere", "rastrigin", "ackley", "griewank", "rosenbrock"}
         
     def operador_vecindad(self, actual):
@@ -18,21 +18,35 @@ class Recocido:
                 arreglo de 0 y 1
         """
         indice_aleatorio = random.randrange(len(actual))
-        vecino = actual
-        vecino[indice_aleatorio] = (vecino[indice_aleatorio] + 1)%2
+        vecino = actual.copy()
+        vecino[indice_aleatorio] = (vecino[indice_aleatorio] + 1) % 2
         return vecino
     
-    def enfriamiento(self, temperatura_actual, iteracion):
+    def enfriamiento_lineal(self, temperatura_actual, iteracion, velocidad_enfriamiento):
         """Función que simula el enfriamiento lineal
 
         Args:
-            temperatura_actual (int): Temperatura actual
+            temperatura_actual (float): Temperatura actual
             iteracion (int): Iteracion actual del algoritmo
+            velocidad_enfriamiento (float): Velocidad de enfriamiento
 
         Returns:
-            int:  nueva temperatura resultante del enfriamiento
+            float: Nueva temperatura resultante del enfriamiento
         """
-        return temperatura_actual - self.velocidad_enfriamiento * iteracion
+        return temperatura_actual - velocidad_enfriamiento * iteracion
+    
+    def enfriamiento_exponencial(self, temperatura_actual, iteracion, factor_enfriamiento):
+        """Función que simula el enfriamiento exponencial
+
+        Args:
+            temperatura_actual (float): Temperatura actual
+            iteracion (int): Iteracion actual del algoritmo
+            factor_enfriamiento (float): Factor de enfriamiento
+
+        Returns:
+            float: Nueva temperatura resultante del enfriamiento
+        """
+        return temperatura_actual * factor_enfriamiento
     
     def genera_inicial(self, dimension, funcion):
         """Genera los valores iniciales para el recocido simulado
@@ -100,39 +114,53 @@ class Recocido:
         elif funcion == "rosenbrock":
             return Funciones.rosenbrock(decodificacion)
     
-    def recocido_simulado(self, temperatura, dimension, iteraciones, funcion):
+    def recocido_simulado(self, temperatura, dimension, iteraciones, funcion, enfriamiento="lineal", velocidad_enfriamiento=1.0, factor_enfriamiento=0.95):
         """Implementacion de recocido simulado
 
         Args:
-            temperatura (_type_): _description_
-            dimension (_type_): _description_
-            iteraciones (_type_): _description_
-            funcion (_type_): _description_
+            temperatura (float): Temperatura inicial
+            dimension (int): Dimension del espacio de búsqueda
+            iteraciones (int): Número de iteraciones
+            funcion (str): Función de optimización
+            enfriamiento (str): Tipo de esquema de enfriamiento (lineal o exponencial)
+            velocidad_enfriamiento (float): Velocidad de enfriamiento para el enfriamiento lineal
+            factor_enfriamiento (float): Factor de enfriamiento para el enfriamiento exponencial
+
+        Returns:
+            float: Mejor valor encontrado por el algoritmo
         """
         valores_iniciales = self.genera_inicial(dimension, funcion)
         solucion_actual = Codificacion().codifica_vector(valores_iniciales, 22, 0, 2)
+        
         for i in range(iteraciones):
             solucion_candidata = self.operador_vecindad(solucion_actual)
             evaluaciones = self.evalua_soluciones(solucion_actual, solucion_candidata, funcion)
+            
             if evaluaciones[0] > evaluaciones[1]:
                 solucion_actual = solucion_candidata
             else:
-                if np.random.random() < (np.exp([(-(evaluaciones[1]-evaluaciones[0])/temperatura)])):
+                if np.random.random() < np.exp(-((evaluaciones[1] - evaluaciones[0]) / temperatura)):
                     solucion_actual = solucion_candidata
-            temperatura = self.enfriamiento(temperatura, i)
+                    
+            if enfriamiento == "lineal":
+                temperatura = self.enfriamiento_lineal(temperatura, i, velocidad_enfriamiento)
+            elif enfriamiento == "exponencial":
+                temperatura = self.enfriamiento_exponencial(temperatura, i, factor_enfriamiento)
+                
         return self.evalua_solucion_final(solucion_actual, funcion)
                     
-        
 if __name__ == "__main__":
-    if len(sys.argv) == 5: 
+    if len(sys.argv) == 6: 
         rec = Recocido()
         nombre_funcion = sys.argv[1]
-        temperatura = int(sys.argv[2])
+        temperatura = float(sys.argv[2])
         dimensiones = int(sys.argv[3])
         iteraciones = int(sys.argv[4])
+        tipo_enfriamiento = sys.argv[5]
+        
         if nombre_funcion in rec.funciones:
-            print(rec.recocido_simulado(temperatura, dimensiones, iteraciones, nombre_funcion))
+            print(rec.recocido_simulado(temperatura, dimensiones, iteraciones, nombre_funcion, enfriamiento=tipo_enfriamiento))
         else:
             print("Función no reconocida, las opciones son sphere rastrigin ackley griewank rosenbrock ")
     else:
-        print("Se ejecuta como: python Recocido.py <funcion> <temperatura> <dimension> <iteraciones>")
+        print("Se ejecuta como: python Recocido.py <funcion> <temperatura> <dimension> <iteraciones> <tipo_enfriamiento>")
