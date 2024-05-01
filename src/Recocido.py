@@ -8,6 +8,7 @@ class Recocido:
     
     def __init__(self):
         self.funciones = {"sphere", "rastrigin", "ackley", "griewank", "rosenbrock"}
+        self.semilla = 0
         
     def operador_vecindad(self, actual):
         """Funcion que genera un vecino aleatorio
@@ -114,7 +115,7 @@ class Recocido:
         elif funcion == "rosenbrock":
             return Funciones.rosenbrock(decodificacion)
     
-    def recocido_simulado(self, temperatura, dimension, iteraciones, funcion, enfriamiento="lineal", velocidad_enfriamiento=1.0, factor_enfriamiento=0.95):
+    def recocido_simulado(self, temperatura, dimension, iteraciones, funcion, enfriamiento="lineal", velocidad_enfriamiento=1.0, factor_enfriamiento=0.95, ejecucion=1):
         """Implementacion de recocido simulado
 
         Args:
@@ -129,15 +130,18 @@ class Recocido:
         Returns:
             float: Mejor valor encontrado por el algoritmo
         """
+        archivo = "output/" + funcion + "/"+ funcion + "_" + enfriamiento + "_" + str(ejecucion) + ".txt"
+        file = open(archivo, 'w')
+        file.write("iteracion  mejor_solucion    distancia_euclidiana    distancia_hamming\n")
         valores_iniciales = self.genera_inicial(dimension, funcion)
         solucion_actual = Codificacion().codifica_vector(valores_iniciales, 22, 0, 2)
-        
         for i in range(iteraciones):
             solucion_candidata = self.operador_vecindad(solucion_actual)
             evaluaciones = self.evalua_soluciones(solucion_actual, solucion_candidata, funcion)
-            
+            sol_actual = evaluaciones[0]
             if evaluaciones[0] > evaluaciones[1]:
                 solucion_actual = solucion_candidata
+                sol_actual = evaluaciones[1]
             else:
                 if np.random.random() < np.exp(-((evaluaciones[1] - evaluaciones[0]) / temperatura)):
                     solucion_actual = solucion_candidata
@@ -146,20 +150,29 @@ class Recocido:
                 temperatura = self.enfriamiento_lineal(temperatura, i, velocidad_enfriamiento)
             elif enfriamiento == "exponencial":
                 temperatura = self.enfriamiento_exponencial(temperatura, i, factor_enfriamiento)
-                
+            print(np.linalg.norm(solucion_candidata, solucion_actual))
+            file.write(str(i) + "         " + str(sol_actual) + "        " +  "\n")
+        file.write("// Funcion: " + funcion + " Enfriamiento: " + enfriamiento + " Semilla: " + str(self.semilla))
+        file.close()
         return self.evalua_solucion_final(solucion_actual, funcion)
                     
 if __name__ == "__main__":
-    if len(sys.argv) == 6: 
+    if len(sys.argv) >= 6: 
         rec = Recocido()
         nombre_funcion = sys.argv[1]
         temperatura = float(sys.argv[2])
         dimensiones = int(sys.argv[3])
         iteraciones = int(sys.argv[4])
         tipo_enfriamiento = sys.argv[5]
+        rec.semilla = np.random.randint(1, math.pow(2, 31))
+        if len(sys.argv) == 7:
+            rec.semilla = int(sys.argv[6])
+        random.seed(rec.semilla)
+        np.random.seed(rec.semilla)
         
         if nombre_funcion in rec.funciones:
             print(rec.recocido_simulado(temperatura, dimensiones, iteraciones, nombre_funcion, enfriamiento=tipo_enfriamiento))
+            print(f"La semila es {rec.semilla}")
         else:
             print("Función no reconocida, las opciones son sphere rastrigin ackley griewank rosenbrock ")
     else:
