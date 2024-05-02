@@ -1,0 +1,1 @@
+iteracion  mejor_solucion       peor_solucion         promedio               distancia_euclidiana                 distancia_hamming

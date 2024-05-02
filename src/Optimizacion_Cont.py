@@ -6,7 +6,7 @@ from Funciones import Funciones
 
 class AlgoritmoGenetico:
     
-    def __init__(self, funcion_objetivo, dominio, tamano_poblacion=100, num_generaciones=100, prob_mutacion=0.1, num_puntos_cruza=2, elitismo=False, reemplazo="generacional"):
+    def __init__(self, funcion_objetivo, dominio, tamano_poblacion=100, num_generaciones=1000, prob_mutacion=0.1, num_puntos_cruza=2, elitismo=False, reemplazo="generacional", semilla = 0, numero_ejecucion = 31, nombre_funcion=""):
         self.funcion_objetivo = funcion_objetivo
         self.dominio = dominio
         self.tamano_poblacion = tamano_poblacion
@@ -15,6 +15,9 @@ class AlgoritmoGenetico:
         self.num_puntos_cruza = num_puntos_cruza
         self.elitismo = elitismo
         self.reemplazo = reemplazo
+        self.semilla = semilla
+        self.nombre = nombre_funcion
+        self.numero_ejecucion = numero_ejecucion
 
     def inicializar_poblacion(self):
         poblacion = []
@@ -99,9 +102,34 @@ class AlgoritmoGenetico:
             nueva_generacion.extend([hijo1_mutado, hijo2_mutado])
         return nueva_generacion
 
+    def encuentra_peor(self, evaluaciones, peor):
+        peor_candidato = max(evaluaciones, key=lambda x: x[1])[1]
+        if peor_candidato > peor:
+            return peor_candidato
+        else:
+            return peor 
+
+    def calcula_promedio(self, evaluaciones, promedio_actual):
+        suma = 0
+        for i in range(len(evaluaciones)):
+            suma += evaluaciones[i][1]
+        suma /= len(evaluaciones)    
+        promedio_actual += suma
+        return promedio_actual/2
+
+   # def distancia_euclidiana(self, poblacion):
+        
+
     def ejecutar(self):
         poblacion = self.inicializar_poblacion()
+        #print(poblacion[0])
         mejor_aptitud_por_generacion = []
+        archivo = "output/" + self.nombre + "/Genetico" + "/" + self.reemplazo + "/" + self.nombre + "_" + self.reemplazo + "_" + str(self.numero_ejecucion) + ".txt"
+        file = open(archivo, 'w')
+        file.write("iteracion  mejor_solucion       peor_solucion         promedio               distancia_euclidiana                 distancia_hamming\n")
+        peor = 0
+        promedio = 0
+        mejor = float("inf")
         for _ in range(self.num_generaciones):
             evaluaciones = self.evaluar_poblacion(poblacion)
             mejor_aptitud = min(evaluaciones, key=lambda x: x[1])[1]
@@ -112,7 +140,13 @@ class AlgoritmoGenetico:
                 poblacion = self.reemplazar_generacional_elitismo(poblacion, evaluaciones)
             elif self.reemplazo == "peores":
                 poblacion = self.reemplazar_peores(poblacion, evaluaciones)
-        return poblacion, mejor_aptitud_por_generacion
+            if mejor > mejor_aptitud:
+                mejor = mejor_aptitud
+            peor = self.encuentra_peor(evaluaciones, peor)
+            promedio += self.calcula_promedio(evaluaciones, promedio)
+            mejor_aptitud_por_generacion.append(mejor_aptitud)
+        file.close()
+        return poblacion, mejor_aptitud_por_generacion, mejor, peor, promedio
 
 def graficar_evolucion(funcion_objetivo, dominio, titulo, reemplazo):
     ag = AlgoritmoGenetico(funcion_objetivo, dominio, reemplazo=reemplazo)
@@ -123,9 +157,11 @@ def graficar_evolucion(funcion_objetivo, dominio, titulo, reemplazo):
     plt.ylabel("Mejor Aptitud")
     plt.show()
     
-def ejecucion(funcion_objetivo, dominio, reemplazo):
-    ag = AlgoritmoGenetico(funcion_objetivo, dominio, reemplazo=reemplazo)
-    _, mejor_aptitud_por_generacion = ag.ejecutar()
+def ejecucion(funcion_seleccionada, funcion_objetivo, dominio, reemplazo):
+    ag = AlgoritmoGenetico(funcion_objetivo, dominio, reemplazo=reemplazo, nombre_funcion = funcion_seleccionada)
+    poblacion, mejor_aptitud_por_generacion, mejor, peor, promedio = ag.ejecutar()
+    print(ag.semilla)
+    print(mejor)
 
 if __name__ == "__main__":
     dominios = {
@@ -165,4 +201,4 @@ if __name__ == "__main__":
     dominio = dominios[funcion_seleccionada]
     titulo = f"Evolución de Aptitud para {funcion_seleccionada} con {reemplazo_seleccionado.capitalize()}"
 
-    graficar_evolucion(funcion_objetivo, dominio, titulo, reemplazo_seleccionado)
+    ejecucion(funcion_seleccionada, funcion_objetivo, dominio, reemplazo_seleccionado)
