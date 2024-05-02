@@ -9,6 +9,7 @@ class Recocido:
     def __init__(self):
         self.funciones = {"sphere", "rastrigin", "ackley", "griewank", "rosenbrock"}
         self.semilla = 0
+        self.dominio = ()
         
     def operador_vecindad(self, actual):
         """Funcion que genera un vecino aleatorio
@@ -18,9 +19,10 @@ class Recocido:
             actual (list(integer)): Solucion actual representado en un
                 arreglo de 0 y 1
         """
-        indice_aleatorio = random.randrange(len(actual))
+        indices_aleatorios = np.random.randint(len(actual), size=5)
         vecino = actual.copy()
-        vecino[indice_aleatorio] = (vecino[indice_aleatorio] + 1) % 2
+        for i in range(len(indices_aleatorios)):
+            vecino[indices_aleatorios[i]] = (vecino[indices_aleatorios[i]] + 1) % 2
         return vecino
     
     def enfriamiento_lineal(self, temperatura_actual, iteracion, velocidad_enfriamiento):
@@ -115,7 +117,7 @@ class Recocido:
         elif funcion == "rosenbrock":
             return Funciones.rosenbrock(decodificacion)
     
-    def recocido_simulado(self, temperatura, dimension, iteraciones, funcion, enfriamiento="lineal", velocidad_enfriamiento=1.0, factor_enfriamiento=0.95, ejecucion=1):
+    def recocido_simulado(self, temperatura, dimension, iteraciones, funcion, enfriamiento="lineal", velocidad_enfriamiento=1.0, factor_enfriamiento=0.95, ejecucion=31):
         """Implementacion de recocido simulado
 
         Args:
@@ -130,11 +132,11 @@ class Recocido:
         Returns:
             float: Mejor valor encontrado por el algoritmo
         """
-        archivo = "output/" + funcion + "/"+ funcion + "_" + enfriamiento + "_" + str(ejecucion) + ".txt"
+        archivo = "output/" + funcion + "/Recocido" + "/" + enfriamiento + "/" + funcion + "_" + enfriamiento + "_" + str(ejecucion) + ".txt"
         file = open(archivo, 'w')
-        file.write("iteracion  mejor_solucion    distancia_euclidiana    distancia_hamming\n")
+        file.write("iteracion  mejor_solucion    distancia_euclidiana                 distancia_hamming\n")
         valores_iniciales = self.genera_inicial(dimension, funcion)
-        solucion_actual = Codificacion().codifica_vector(valores_iniciales, 22, 0, 2)
+        solucion_actual = Codificacion().codifica_vector(valores_iniciales, 22, self.dominio[0], self.dominio[1])
         for i in range(iteraciones):
             solucion_candidata = self.operador_vecindad(solucion_actual)
             evaluaciones = self.evalua_soluciones(solucion_actual, solucion_candidata, funcion)
@@ -150,8 +152,9 @@ class Recocido:
                 temperatura = self.enfriamiento_lineal(temperatura, i, velocidad_enfriamiento)
             elif enfriamiento == "exponencial":
                 temperatura = self.enfriamiento_exponencial(temperatura, i, factor_enfriamiento)
-            print(np.linalg.norm(solucion_candidata, solucion_actual))
-            file.write(str(i) + "         " + str(sol_actual) + "        " +  "\n")
+            distancia_euclideana = np.linalg.norm(np.array(solucion_candidata) - np.array(solucion_actual))
+            distancia_hamming = np.count_nonzero(np.array(solucion_candidata)!=np.array(solucion_actual))
+            file.write(str(i) + "         " + str(sol_actual) + "        " + str(distancia_euclideana) + "                                 " + str(distancia_hamming) + "\n")
         file.write("// Funcion: " + funcion + " Enfriamiento: " + enfriamiento + " Semilla: " + str(self.semilla))
         file.close()
         return self.evalua_solucion_final(solucion_actual, funcion)
@@ -164,6 +167,7 @@ if __name__ == "__main__":
         dimensiones = int(sys.argv[3])
         iteraciones = int(sys.argv[4])
         tipo_enfriamiento = sys.argv[5]
+        #ejecucion = sys.argv[6] #Parametro usado para nombrar al archivo
         rec.semilla = np.random.randint(1, math.pow(2, 31))
         if len(sys.argv) == 7:
             rec.semilla = int(sys.argv[6])
@@ -171,6 +175,7 @@ if __name__ == "__main__":
         np.random.seed(rec.semilla)
         
         if nombre_funcion in rec.funciones:
+            rec.dominio = Funciones().dominios(nombre_funcion)
             print(rec.recocido_simulado(temperatura, dimensiones, iteraciones, nombre_funcion, enfriamiento=tipo_enfriamiento))
             print(f"La semila es {rec.semilla}")
         else:

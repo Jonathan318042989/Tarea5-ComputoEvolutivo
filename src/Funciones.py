@@ -13,6 +13,17 @@ class Funciones:
     dominio_rosenbrock = (-2.048, 2.048)
     
     @staticmethod
+    def dominios(funcion):
+        if funcion == "sphere" or funcion == "rastrigin":
+            return dominio_sphere_rastrigin
+        elif funcion == "ackley":
+            return dominio_ackley
+        elif funcion == "griewank":
+            return dominio_griewank
+        elif funcion == "rosenbrock":
+            return dominio_rosenbrock
+    
+    @staticmethod
     def rosenbrock(valores):
         """Método que implementa la función Rosenbrock
 
