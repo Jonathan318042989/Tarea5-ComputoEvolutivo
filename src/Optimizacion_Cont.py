@@ -122,6 +122,10 @@ def graficar_evolucion(funcion_objetivo, dominio, titulo, reemplazo):
     plt.xlabel("Generación")
     plt.ylabel("Mejor Aptitud")
     plt.show()
+    
+def ejecucion(funcion_objetivo, dominio, reemplazo):
+    ag = AlgoritmoGenetico(funcion_objetivo, dominio, reemplazo=reemplazo)
+    _, mejor_aptitud_por_generacion = ag.ejecutar()
 
 if __name__ == "__main__":
     dominios = {
