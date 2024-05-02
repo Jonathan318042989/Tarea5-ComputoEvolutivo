@@ -7,6 +7,9 @@ from Funciones import Funciones
 class AlgoritmoGenetico:
     
     def __init__(self, funcion_objetivo, dominio, tamano_poblacion=100, num_generaciones=1000, prob_mutacion=0.1, num_puntos_cruza=2, elitismo=False, reemplazo="generacional", semilla = 0, numero_ejecucion = 31, nombre_funcion=""):
+        
+        self.semilla = semilla if semilla is not None else random.randint(1, 1000)
+        random.seed(self.semilla)
         self.funcion_objetivo = funcion_objetivo
         self.dominio = dominio
         self.tamano_poblacion = tamano_poblacion
@@ -22,9 +25,10 @@ class AlgoritmoGenetico:
     def inicializar_poblacion(self):
         poblacion = []
         for _ in range(self.tamano_poblacion):
-            solucion = [random.uniform(self.dominio[0], self.dominio[1]) for _ in range(len(self.dominio))]
+            solucion = [random.uniform(self.dominio[0], self.dominio[1]) for _ in range(10)]
             poblacion.append(solucion)
         return poblacion
+
 
     def evaluar_poblacion(self, poblacion):
         evaluaciones = []
@@ -47,10 +51,10 @@ class AlgoritmoGenetico:
         return padres_seleccionados
 
     def cruzar_padres(self, padre1, padre2):
-        puntos_cruza = sorted(random.sample(range(len(padre1)), self.num_puntos_cruza))
+        puntos_cruza = sorted(random.sample(range(10), self.num_puntos_cruza))
         hijo1 = []
         hijo2 = []
-        for i in range(len(padre1)):
+        for i in range(10):
             if i in puntos_cruza:
                 hijo1.append(padre2[i])
                 hijo2.append(padre1[i])
@@ -60,10 +64,11 @@ class AlgoritmoGenetico:
         return hijo1, hijo2
 
     def mutar(self, individuo):
-        for i in range(len(individuo)):
+        for i in range(10):
             if random.random() < self.prob_mutacion:
                 individuo[i] = random.uniform(self.dominio[0], self.dominio[1])
         return individuo
+
 
     def reemplazar_generacional(self, poblacion, evaluaciones):
         nueva_generacion = []
@@ -157,11 +162,12 @@ def graficar_evolucion(funcion_objetivo, dominio, titulo, reemplazo):
     plt.ylabel("Mejor Aptitud")
     plt.show()
     
-def ejecucion(funcion_seleccionada, funcion_objetivo, dominio, reemplazo):
-    ag = AlgoritmoGenetico(funcion_objetivo, dominio, reemplazo=reemplazo, nombre_funcion = funcion_seleccionada)
+def ejecucion(funcion_seleccionada, funcion_objetivo, dominio, reemplazo, semilla=None):
+    ag = AlgoritmoGenetico(funcion_objetivo, dominio, semilla=semilla, reemplazo=reemplazo, nombre_funcion=funcion_seleccionada)
     poblacion, mejor_aptitud_por_generacion, mejor, peor, promedio = ag.ejecutar()
-    print(ag.semilla)
-    print(mejor)
+    print("Semilla utilizada:", ag.semilla)
+    print("Mejor aptitud:", mejor)
+
 
 if __name__ == "__main__":
     dominios = {
@@ -182,12 +188,13 @@ if __name__ == "__main__":
 
     reemplazos = ["generacional", "generacional_elitismo", "peores"]
 
-    if len(sys.argv) != 3:
-        print("Uso: python Optimizacion_Cont.py <funcion> <reemplazo>")
+    if len(sys.argv) < 3 or len(sys.argv) > 4:
+        print("Uso: python Optimizacion_Cont.py <funcion> <reemplazo> [semilla]")
         sys.exit(1)
 
     funcion_seleccionada = sys.argv[1]
     reemplazo_seleccionado = sys.argv[2]
+    semilla = int(sys.argv[3]) if len(sys.argv) == 4 else None
 
     if funcion_seleccionada not in funciones:
         print("La función seleccionada no está disponible.")
@@ -201,4 +208,4 @@ if __name__ == "__main__":
     dominio = dominios[funcion_seleccionada]
     titulo = f"Evolución de Aptitud para {funcion_seleccionada} con {reemplazo_seleccionado.capitalize()}"
 
-    ejecucion(funcion_seleccionada, funcion_objetivo, dominio, reemplazo_seleccionado)
+    ejecucion(funcion_seleccionada, funcion_objetivo, dominio, reemplazo_seleccionado, semilla=semilla)
