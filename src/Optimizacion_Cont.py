@@ -143,7 +143,15 @@ class AlgoritmoGenetico:
                 distancias += np.linalg.norm(np.array(poblacion[i]) - np.array(poblacion[j]))
         return distancias/len(poblacion)
 
-        
+    def entropia(self, distancias):
+        frecuencias = self.calcula_frecuencia_hamming(distancias)
+        total = len(distancias)
+        entropia = 0
+        for distancia in frecuencias:
+            frecuencias[distancia] = frecuencias[distancia]/total
+            entropia += frecuencias[distancia] * math.log(frecuencias[distancia])
+        return entropia*-1
+            
 
     def ejecutar(self):
         poblacion = self.inicializar_poblacion()
@@ -169,16 +177,14 @@ class AlgoritmoGenetico:
                 mejor = mejor_aptitud
             distancias_hamming = [self.distancia_hamming(poblacion[i], poblacion[j]) for i in range(len(poblacion)) for j in range(i+1, len(poblacion))]
             distancia_hamming = sum(distancias_hamming)/len(distancias_hamming)
-            
             distancia_euclidiana = self.distancia_euclidiana(poblacion)
             peor = self.encuentra_peor(evaluaciones, peor)
             promedio += self.calcula_promedio(evaluaciones, promedio)
             mejor_aptitud_por_generacion.append(mejor_aptitud)
-            file.write(str(i) + "         " + str(mejor) + "         " + str(peor) + "                   "+ str(promedio) + "                   " + str(distancia_euclidiana) + "                                 " + str(distancia_hamming) + "\n")
+            entropia = self.entropia(distancias_hamming)
+            file.write(str(i) + "         " + str(mejor) + "         " + str(peor) + "                   "+ str(promedio) + "                   " + str(distancia_euclidiana) + "                                 " + str(distancia_hamming) + "                                     " + str(entropia) +  "\n")
         file.write("// Funcion: " + self.nombre + " Reemplazo: " + self.reemplazo + " Semilla: " + str(self.semilla))
         file.close()
-        frecuencia_hamming = self.calcula_frecuencia_hamming(distancias_hamming)
-        print("Frecuencia de ocurrencia de distancias de Hamming:", frecuencia_hamming)
         return poblacion, mejor_aptitud_por_generacion, mejor, peor, promedio
 
 
@@ -191,8 +197,8 @@ def graficar_evolucion(funcion_objetivo, dominio, titulo, reemplazo):
     plt.ylabel("Mejor Aptitud")
     plt.show()
     
-def ejecucion(funcion_seleccionada, funcion_objetivo, dominio, reemplazo, semilla=None):
-    ag = AlgoritmoGenetico(funcion_objetivo, dominio, semilla=semilla, reemplazo=reemplazo, nombre_funcion=funcion_seleccionada)
+def ejecucion(funcion_seleccionada, funcion_objetivo, dominio, reemplazo, semilla=None, numero_ejecucion=31):
+    ag = AlgoritmoGenetico(funcion_objetivo, dominio, semilla=semilla, reemplazo=reemplazo, nombre_funcion=funcion_seleccionada, numero_ejecucion=numero_ejecucion)
     poblacion, mejor_aptitud_por_generacion, mejor, peor, promedio = ag.ejecutar()
     print("Semilla utilizada:", ag.semilla)
     print("Mejor aptitud:", mejor)
@@ -223,7 +229,9 @@ if __name__ == "__main__":
 
     funcion_seleccionada = sys.argv[1]
     reemplazo_seleccionado = sys.argv[2]
-    semilla = int(sys.argv[3]) if len(sys.argv) == 4 else np.random.randint(1, math.pow(2, 31))
+    numero_ejecucion = sys.argv[3]
+    semilla = np.random.randint(1, math.pow(2, 31))
+    #semilla = int(sys.argv[3]) if len(sys.argv) == 4 else np.random.randint(1, math.pow(2, 31))
     np.random.seed(semilla)
     random.seed(semilla)
 
@@ -239,4 +247,5 @@ if __name__ == "__main__":
     dominio = dominios[funcion_seleccionada]
     titulo = f"Evolución de Aptitud para {funcion_seleccionada} con {reemplazo_seleccionado.capitalize()}"
 
-    ejecucion(funcion_seleccionada, funcion_objetivo, dominio, reemplazo_seleccionado, semilla=semilla)
+    #ejecucion(funcion_seleccionada, funcion_objetivo, dominio, reemplazo_seleccionado, semilla=semilla)
+    ejecucion(funcion_seleccionada, funcion_objetivo, dominio, reemplazo_seleccionado, semilla=semilla, numero_ejecucion=numero_ejecucion)
