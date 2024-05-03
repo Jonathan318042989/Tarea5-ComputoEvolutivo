@@ -127,12 +127,22 @@ class AlgoritmoGenetico:
     def distancia_hamming(self, solucion1, solucion2):
         return sum(x != y for x, y in zip(solucion1, solucion2))
 
+    def calcula_frecuencia_hamming(self, distancias_hamming):
+        frecuencia = {}
+        for distancia in distancias_hamming:
+            if distancia in frecuencia:
+                frecuencia[distancia] += 1
+            else:
+                frecuencia[distancia] = 1
+        return frecuencia
+
     def distancia_euclidiana(self, poblacion):
         distancias = 0
         for i in range(len(poblacion)):
             for j in range(i+1, len(poblacion)):
                 distancias += np.linalg.norm(np.array(poblacion[i]) - np.array(poblacion[j]))
         return distancias/len(poblacion)
+
         
 
     def ejecutar(self):
@@ -159,6 +169,7 @@ class AlgoritmoGenetico:
                 mejor = mejor_aptitud
             distancias_hamming = [self.distancia_hamming(poblacion[i], poblacion[j]) for i in range(len(poblacion)) for j in range(i+1, len(poblacion))]
             distancia_hamming = sum(distancias_hamming)/len(distancias_hamming)
+            
             distancia_euclidiana = self.distancia_euclidiana(poblacion)
             peor = self.encuentra_peor(evaluaciones, peor)
             promedio += self.calcula_promedio(evaluaciones, promedio)
@@ -166,6 +177,8 @@ class AlgoritmoGenetico:
             file.write(str(i) + "         " + str(mejor) + "         " + str(peor) + "                   "+ str(promedio) + "                   " + str(distancia_euclidiana) + "                                 " + str(distancia_hamming) + "\n")
         file.write("// Funcion: " + self.nombre + " Reemplazo: " + self.reemplazo + " Semilla: " + str(self.semilla))
         file.close()
+        frecuencia_hamming = self.calcula_frecuencia_hamming(distancias_hamming)
+        print("Frecuencia de ocurrencia de distancias de Hamming:", frecuencia_hamming)
         return poblacion, mejor_aptitud_por_generacion, mejor, peor, promedio
 
 
