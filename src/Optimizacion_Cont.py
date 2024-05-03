@@ -1,3 +1,4 @@
+import math
 import sys
 import random
 import numpy as np
@@ -118,24 +119,33 @@ class AlgoritmoGenetico:
         suma = 0
         for i in range(len(evaluaciones)):
             suma += evaluaciones[i][1]
-        suma /= len(evaluaciones)    
-        promedio_actual += suma
+            suma /= len(evaluaciones)    
+            promedio_actual += suma
         return promedio_actual/2
 
-   # def distancia_euclidiana(self, poblacion):
+
+    def distancia_hamming(self, solucion1, solucion2):
+        return sum(x != y for x, y in zip(solucion1, solucion2))
+
+    def distancia_euclidiana(self, poblacion):
+        distancias = 0
+        for i in range(len(poblacion)):
+            for j in range(i+1, len(poblacion)):
+                distancias += np.linalg.norm(np.array(poblacion[i]) - np.array(poblacion[j]))
+        return distancias/len(poblacion)
         
 
     def ejecutar(self):
         poblacion = self.inicializar_poblacion()
-        #print(poblacion[0])
+        print(poblacion[0])
         mejor_aptitud_por_generacion = []
         archivo = "output/" + self.nombre + "/Genetico" + "/" + self.reemplazo + "/" + self.nombre + "_" + self.reemplazo + "_" + str(self.numero_ejecucion) + ".txt"
         file = open(archivo, 'w')
-        file.write("iteracion  mejor_solucion       peor_solucion         promedio               distancia_euclidiana                 distancia_hamming\n")
+        file.write("iteracion  mejor_solucion       peor_solucion                               promedio                                 distancia_euclidiana                                  distancia_hamming                                    entropia\n")
         peor = 0
         promedio = 0
         mejor = float("inf")
-        for _ in range(self.num_generaciones):
+        for i in range(self.num_generaciones):
             evaluaciones = self.evaluar_poblacion(poblacion)
             mejor_aptitud = min(evaluaciones, key=lambda x: x[1])[1]
             mejor_aptitud_por_generacion.append(mejor_aptitud)
@@ -147,11 +157,17 @@ class AlgoritmoGenetico:
                 poblacion = self.reemplazar_peores(poblacion, evaluaciones)
             if mejor > mejor_aptitud:
                 mejor = mejor_aptitud
+            distancias_hamming = [self.distancia_hamming(poblacion[i], poblacion[j]) for i in range(len(poblacion)) for j in range(i+1, len(poblacion))]
+            distancia_hamming = sum(distancias_hamming)/len(distancias_hamming)
+            distancia_euclidiana = self.distancia_euclidiana(poblacion)
             peor = self.encuentra_peor(evaluaciones, peor)
             promedio += self.calcula_promedio(evaluaciones, promedio)
             mejor_aptitud_por_generacion.append(mejor_aptitud)
+            file.write(str(i) + "         " + str(mejor) + "         " + str(peor) + "                   "+ str(promedio) + "                   " + str(distancia_euclidiana) + "                                 " + str(distancia_hamming) + "\n")
+        file.write("// Funcion: " + self.nombre + " Reemplazo: " + self.reemplazo + " Semilla: " + str(self.semilla))
         file.close()
         return poblacion, mejor_aptitud_por_generacion, mejor, peor, promedio
+
 
 def graficar_evolucion(funcion_objetivo, dominio, titulo, reemplazo):
     ag = AlgoritmoGenetico(funcion_objetivo, dominio, reemplazo=reemplazo)
@@ -194,7 +210,9 @@ if __name__ == "__main__":
 
     funcion_seleccionada = sys.argv[1]
     reemplazo_seleccionado = sys.argv[2]
-    semilla = int(sys.argv[3]) if len(sys.argv) == 4 else None
+    semilla = int(sys.argv[3]) if len(sys.argv) == 4 else np.random.randint(1, math.pow(2, 31))
+    np.random.seed(semilla)
+    random.seed(semilla)
 
     if funcion_seleccionada not in funciones:
         print("La función seleccionada no está disponible.")
