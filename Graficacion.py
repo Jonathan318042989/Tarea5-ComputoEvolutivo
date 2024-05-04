@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt 
+import numpy as np
 
 class Graficacion:
     @staticmethod
@@ -196,7 +197,78 @@ class Graficacion:
         plt.legend(loc='best')
         plt.savefig('output/Graficas/evolucion_promedio_' + funcion +'_1.png')
         plt.show()
- 
+
+    @staticmethod
+    def datos():
+        funciones = {"sphere", "ackley", "griewank", "rastrigin", "rosenbrock"}
+        enfriamientos = {"exponencial", "lineal"}
+        reemplazos = {"generacional", "generacional_elitismo", "peores"}
+        algoritmos = {"Recocido", "Genetico"}
+        id = 1
+        for funcion in funciones:
+            for algoritmo in algoritmos:
+                if algoritmo == "Recocido":
+                    for enfriamiento in enfriamientos:
+                        mejor = float('inf')
+                        peor = float(-1)
+                        promedio = 0
+                        valores = []
+                        for i in range(1,31):
+                            archivo = "output/" + funcion + "/" + algoritmo + "/" + enfriamiento + "/" + funcion + "_" + enfriamiento + "_" + str(i) + ".txt"
+                            with open(archivo, 'r') as f:
+                                ultima = f.readlines()[-2]
+                                lineas = [i for i in ultima.split()]
+                                if float(lineas[1]) < mejor:
+                                    mejor = float(lineas[1])
+                                if float(lineas[1]) > peor:
+                                    peor = float(lineas[1])
+                                promedio += float(lineas[1])
+                                valores.append(float(lineas[1]))
+                        promedio /= 30
+                        valores.sort()
+                        mediana = .5 * (valores[15] + valores[16])
+                        varianza = np.var(valores, ddof=1)
+                        desviacion = np.sqrt(varianza)
+                        print(f"Funcion {funcion}  Enfriamiento {enfriamiento} {id}")
+                        print(f"Mejor {mejor}")
+                        print(f"Peor {peor}")
+                        print(f"Promedio {promedio}")
+                        print(f"Mediana {mediana}")
+                        print(f"Varianza {varianza}")
+                        print(f"Desviacion {desviacion}")
+                        id +=1
+                elif algoritmo == "Genetico":
+                    for reemplazo in reemplazos:
+                        mejor = float('inf')
+                        peor = float(-1)
+                        promedio = 0
+                        valores = []
+                        for i in range(1,31):
+                            archivo = "output/" + funcion + "/" + algoritmo + "/" + reemplazo + "/" + funcion + "_" + reemplazo + "_" + str(i) + ".txt"
+                            with open(archivo, 'r') as f:
+                                ultima = f.readlines()[-2]
+                                lineas = [i for i in ultima.split()]
+                                if float(lineas[1]) < mejor:
+                                    mejor = float(lineas[1])
+                                if float(lineas[2]) > peor:
+                                    peor = float(lineas[2])
+                                promedio += float(lineas[3])
+                                valores.append(float(lineas[1]))
+                        promedio /= 30
+                        valores.sort()
+                        mediana = .5 * (valores[15] + valores[16])
+                        varianza = np.var(valores, ddof=1)
+                        desviacion = np.sqrt(varianza)
+                        print(f"Funcion {funcion}  Reemplazo {reemplazo} {id}")
+                        print(f"Mejor {mejor}")
+                        print(f"Peor {peor}")
+                        print(f"Promedio {promedio}")
+                        print(f"Mediana {mediana}")
+                        print(f"Varianza {varianza}")
+                        print(f"Desviacion {desviacion}")
+                        id += 1
+                                
+        
     @staticmethod
     def grafica_boxplot(archivos, titulo, nombre_png):
         datos = []
@@ -319,5 +391,6 @@ class Graficacion:
 #Graficacion.grafica_distancias_euclidianas(files, "Distancia euclidiana para Rosenbrock", 1000, output1)
 #Graficacion.grafica_distancias_hamming(files, "Distancia hamming para Rosenbrock", 1000, output2)
 #Graficacion.grafica_entropia(files, "Entropia para Rosenbrock", 1000, output3)
-Graficacion.grafica_boxplot(files, "Sphere", output4)
+#Graficacion.grafica_boxplot(files, "Sphere", output4)
 #Graficacion.grafica_promedios()
+Graficacion.datos()
